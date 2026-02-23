@@ -1,5 +1,6 @@
 import requests
 import json
+from datetime import date
 import os
 from dotenv import load_dotenv
 
@@ -13,11 +14,10 @@ def get_video_stats(Channel_handle):
         url = f"https://youtube.googleapis.com/youtube/v3/channels?part=contentDetails&forHandle={Channel_handle}&key={api_key}"
         response = requests.get(url)
         data = response.json()
-        # print(json.dumps(data, indent=2))
+        
         Channel_items= data["items"][0]
         related_playlists = Channel_items["contentDetails"]["relatedPlaylists"]
         Channel_playlistID = related_playlists["uploads"]
-        print(f"Channel Playlist ID: {Channel_playlistID}")
         return Channel_playlistID
 
     except requests.exceptions.RequestException as e:
@@ -41,7 +41,6 @@ def get_videoIds(Channel_playlistId):
                 pageToken = data.get("nextPageToken")
                 if not pageToken:
                     break
-            print(video_ids[0])
             return video_ids
 
         except requests.exceptions.RequestException as e:
@@ -78,7 +77,15 @@ def extract_video_data(video_ids, batch_size):
             raise e
     return video_details
 
+
+def save_to_json(extracted_data):
+    filepath = f"./data/YT_data_{date.today()}.json"
+
+    with open(filepath, 'w', encoding='utf-8') as json_output:
+        json.dump(extracted_data, json_output, indent=4, ensure_ascii=False)
+
 if __name__ == "__main__":
     Channel_playlistId = get_video_stats(Channel_handle)
     video_ids = get_videoIds(Channel_playlistId)
-    extract_video_data(video_ids, batch_size=50)
+    video_data = extract_video_data(video_ids, batch_size=50)
+    save_to_json(video_data)
