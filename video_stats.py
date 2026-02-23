@@ -8,7 +8,7 @@ load_dotenv(dotenv_path='./.env')  # Load environment variables from .env file
 api_key = os.getenv("api_key")
 Channel_handle = "MrBeast"
 
-def get_video_stats(Channel_handle, api_key):
+def get_video_stats(Channel_handle):
     try:
         url = f"https://youtube.googleapis.com/youtube/v3/channels?part=contentDetails&forHandle={Channel_handle}&key={api_key}"
         response = requests.get(url)
@@ -23,5 +23,30 @@ def get_video_stats(Channel_handle, api_key):
     except requests.exceptions.RequestException as e:
         raise e
 
+def get_videoIds(Channel_playlistId):
+        video_ids = []
+        pageToken = None
+        baseUrl = f"https://youtube.googleapis.com/youtube/v3/playlistItems?part=contentDetails&&maxResults=50&playlistId={Channel_playlistId}&key={api_key}"
+        
+        try:
+            while True:
+                url = baseUrl
+                if pageToken:
+                    url += f"&pageToken={pageToken}"
+                 
+                response = requests.get(url)
+                data = response.json()
+                video_items = data["items"]
+                video_ids.extend([item["contentDetails"]["videoId"] for item in video_items])
+                pageToken = data.get("nextPageToken")
+                if not pageToken:
+                    break
+
+            return video_ids
+
+        except requests.exceptions.RequestException as e:
+            raise e
+
 if __name__ == "__main__":
-    get_video_stats(Channel_handle, api_key)
+    Channel_playlistId = get_video_stats(Channel_handle)
+    get_videoIds(Channel_playlistId)
